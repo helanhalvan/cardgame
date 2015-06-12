@@ -8,9 +8,8 @@
 %% API functions
 %% ====================================================================
 %spawn will later be overloaded with default value versions
--export([spawn/11,spawn/10,spawn/2]).
-spawn(Game,Options)->
-na.
+-export([spawn/11,spawn/10]).
+
 %turn into paramter list
 %record for player
 spawn(Deck,KeyListner,HandBinds, StartHandSize,%for the deck
