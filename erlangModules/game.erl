@@ -7,8 +7,8 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start/1]).
-
+-export([start/1,start/0]).
+start()->na.
 start(Options)->
 	case opts(Options) of
 		fail -> error;
@@ -21,4 +21,5 @@ start(Options)->
 %% Internal functions
 %% ====================================================================
 
-
+opts(Options)->
+ {BoardOpts,PlayerOpts}.
