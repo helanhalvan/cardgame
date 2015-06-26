@@ -7,7 +7,8 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([getPid/2,makeKeyCallback/2,pacemaker/2,stop/1,makeCaller/0,waitForAck/1,ack/1,sendMsg/2]).
+-export([getPid/2,makeKeyCallback/2,pacemaker/2,stop/1,makeCaller/0,
+		 waitForAck/1,ack/1,sendMsg/2]).
 %makes Caller object
 makeCaller()->
 	A=self(),
