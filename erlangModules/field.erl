@@ -7,11 +7,11 @@
 %-compile(export_all).
 %== public interface
 %constructor
-start(Size) when is_integer(Size)->
-	A=emptyBoard(Size),
-	{UI,Event}=matrixUI:start({Size,Size}),
-	C=spawn_link(fun()-> loop(A, Size, UI) end),
-	{ok,C,Event}.
+%start(Size) when is_integer(Size)->
+%	A=emptyBoard(Size),
+%	{UI,Event}=matrixUI:start({Size,Size}),
+%	C=spawn_link(fun()-> loop(A, Size, UI) end),
+%	{ok,C,Event}.
 start(UI,Size)->
 	A=emptyBoard(Size),
 	C=spawn_link(fun()->loop(A,Size,UI) end),
@@ -29,7 +29,7 @@ kill(Board,Pos)->
 %returns one of: 
 % ok
 % nothingToMove
-% hitSomething
+% {hitSomething, Something,Where}
 % outOfBounds
 move(Board,Src,Target)->
 	C=makeCaller(),
@@ -38,7 +38,7 @@ move(Board,Src,Target)->
 %creates 
 %a thing
 %on target
-spawn(Board,Target,Thing)->  
+spawn(Board,Target,Thing) when erlang:is_pid(Board)->  
 	C=makeCaller(),
 	Board ! {spawn, Target,C,[Thing]},
 	waitForAck(C).
@@ -89,7 +89,7 @@ loop(Board, Size, UI)->
 							nil ->set(Target,Board,Dude,UI),
 									clear(Src,Board,UI),
 									ack(Caller);
-							_Something->senderror(Caller, hitSomething)
+							Something->senderror(Caller, {hitSomething,Something,Target})
 						end
 			end;
 		

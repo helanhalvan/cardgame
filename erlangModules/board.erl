@@ -13,16 +13,18 @@ init(_args)->
 	Children=[],
 	{ok,{RestartPlan,Children}}.
 start(Opts)->
-		io:write({board_starting}),
-
-	[{size,Size},{eventReciver, EventReciver}]=option:get(Opts,[{size,{default,10}},{eventReciver,requried}]),
+	io:write({board_starting}),
+	
+	[{size,Size},{eventReciver, EventReciver}]=option:get(Opts,[{size,{default,10}},{eventReciver,required}]),
 	{ok,Pid}=supervisor:start_link(?MODULE,asd),
 	{UI,Event}=matrixUI:start({Size,Size}),%using wx
-
-	keyValueStore:add(EventReciver, eventSrc,Event),
 	
-		Field={ch1,{field,start,[UI,Size]},permanent,brutal_kill,worker,dynamic},
-	supervisor:start_child(Pid,Field),
+	Field={ch1,{field,start,[UI,Size]},permanent,brutal_kill,worker,dynamic},
+	{ok,FieldPid}=supervisor:start_child(Pid,Field),
+	
+	keyValueStore:add(EventReciver, eventSrc,Event),
+	keyValueStore:add(EventReciver, board, FieldPid),
+	
 	io:write({board_done}),
 	{ok,Pid}.
 

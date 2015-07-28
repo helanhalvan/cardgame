@@ -7,16 +7,19 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start/0,get/2,add/3]).
+-export([start/0,get/2,add/3,list/1]).
 
 get(Monitor,Name)->
 	Caller=utils:makeCaller(),
 	Monitor ! {req, Caller, Name},
 	utils:waitForAck(Caller).
-add(Monitor,Name,Pid)->
-	Monitor ! {new, Name, Pid}.
+add(Monitor,Name,Id)->
+	Monitor ! {new, Name, Id}.
+list(Monitor)->
+	Monitor ! list.
 start()->
-	spawn_link(fun()->loop([]) end).
+	Pid=spawn_link(fun()->loop([]) end),
+	{ok, Pid}.
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
@@ -24,7 +27,8 @@ start()->
 loop(Things)->
 	NewThings=(receive
 		{req, Caller, Name} -> findAndReturn(Caller,Things, Name), Things;
-		{new, Name, Pid} -> add(Things, {Name,Pid})
+		{new, Name, Pid} -> add(Things, {Name,Pid});
+		list -> io:write(Things), Things
 	end),
 	loop(NewThings).
 

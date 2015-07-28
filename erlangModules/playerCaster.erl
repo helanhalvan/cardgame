@@ -7,15 +7,27 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start/8]).
+-export([start/1]).
 %handles cards for a player
-start(Deck,KeyListner,KeyBinds,StartHand,Mover,Side,Board,TickTime)->
+start(Options)->
+	io:write(casterStarting),
+	[{eTick,TickTime}]=option:get(Options,[{eTick,{default,1}}]),
+	[{startHand,StartHand}]=option:get(Options,[{startHand,{default,5}}]),
+	[{deck,Deck}]=option:get(Options,[{deck,{default,deck:new()}}]),
+	io:write(caster20),
+	[{posSrc,PosSrc}]=option:get(Options,[{posSrc,required}]),
+	[{resHolder,Holder}]=option:get(Options,[{resHolder,required}]),
+	[{color,Side}]=option:get(Options,[{color,required}]),
+	io:write(caster40),
+	{board,Board}=keyValueStore:get(Holder,board),
+	io:write(caster45),
 	{Rest,Hand}=draw(Deck,{[],0},StartHand),
 	{UI,_}=matrixUI:start({10,2}),
 	Wallet=cost:newWallet(TickTime),
-	Pid=spawn_link(fun()->loop(Rest,Hand,{Side,Board,Mover},Wallet,UI)end),
-	Callback=utils:makeKeyCallback(Pid, KeyBinds),
-	keyListner:register(Callback, KeyListner).
+	io:write(caster50),
+	Pid=spawn_link(fun()->loop(Rest,Hand,{Side,Board,PosSrc},Wallet,UI)end),
+	io:write(caster100),
+	{ok,Pid}.
 
 loop(Deck,{_,Count}=Hand,{Side,Board,Mover}=A,Payer,UI)->
 		pushHand(Hand,UI),
@@ -29,7 +41,7 @@ loop(Deck,{_,Count}=Hand,{Side,Board,Mover}=A,Payer,UI)->
 					  ok->NewHand=removeCard(Hand,N),loop(Deck,NewHand,A,Payer,UI);
 					  failed->loop(Deck,Hand,A,Payer,UI)
 				  end;
-		Strange->io:write({playerCaster_Got,Strange})
+		_->loop(Deck,Hand,A,Payer,UI)
 	end.
 
 pushHand({_,0},_)->

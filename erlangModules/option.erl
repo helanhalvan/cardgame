@@ -38,4 +38,6 @@ get(Opts,[{Key,{default,Value}}|T],Res)->
 	case lists:keyfind(Key, 1, Opts) of
 		false -> get(Opts,T,[{Key,Value}|Res]);
 		New -> get(Opts,T,[New|Res]) 
-	end.
+	end;
+get(_opts,[{_Key,Mode}|_T],_Res)->
+	io:write({Mode, does_not_exist}).
