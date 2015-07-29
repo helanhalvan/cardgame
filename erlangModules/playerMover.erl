@@ -7,7 +7,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start/1]).
+-export([start/1,askForPos/1]).
 	start(Options)->
 			io:write({moverStarting}),
 			[{moveTickTime,MaxSpeed},{hp,Size}]=option:get(Options,[{moveTickTime,{default,1}},{hp,{default,100}}]),
@@ -21,6 +21,10 @@
 			Pid=spawn_link(fun()->init(Field,Pos,Size,Color,MaxSpeed) end),
 	{ok,Pid}.
 
+askForPos(Mover)->
+	Caller=utils:makeCaller(),
+	Mover ! {wantPos, Caller},
+	utils:waitForAck(Caller).
 
 %% ====================================================================
 %% Internal functions
@@ -42,6 +46,7 @@ ready(Entity,OverLord)->
 		A when ( (A==up) or (A==down) or (A==left) or (A==right) )->  fieldEntity:move(Entity,A),wait(Entity,OverLord);
 		nothingToMove->OverLord ! died, ok; 
 		{hitSomething,_Something,Here} -> fieldEntity:fight(Entity,Here);
+		{wantPos,Caller} -> fieldEntity:getPos(Entity),utils:sendMsg(Caller, Pos),ready(Entity,OverLord);
 		_ -> ready(Entity,OverLord)
 	end.
 
