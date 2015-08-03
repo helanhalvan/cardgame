@@ -32,7 +32,6 @@ askForPos(Mover)->
 init(Field,Pos,Size,Color,MaxSpeed)->
 		Pid=self(),
 		OverLord=self(),%%TODO this shod be a players controlled thing
-		
 		Entity=fieldEntity:spawn(Field,Pos,Size,Color,Pid),
 		utils:pacemaker(fun()->Pid ! go end, MaxSpeed),
 		io:write({moverDone}),
@@ -46,7 +45,7 @@ ready(Entity,OverLord)->
 		A when ( (A==up) or (A==down) or (A==left) or (A==right) )->  fieldEntity:move(Entity,A),wait(Entity,OverLord);
 		nothingToMove->OverLord ! died, ok; 
 		{hitSomething,_Something,Here} -> fieldEntity:fight(Entity,Here);
-		{wantPos,Caller} -> fieldEntity:getPos(Entity),utils:sendMsg(Caller, Pos),ready(Entity,OverLord);
+		{wantPos,Caller} -> Pos=fieldEntity:getPos(Entity),utils:sendMsg(Caller, Pos),ready(Entity,OverLord);
 		_ -> ready(Entity,OverLord)
 	end.
 

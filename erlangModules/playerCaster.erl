@@ -17,19 +17,20 @@ start(Options)->
 	io:write(caster20),
 	[{posSrc,PosSrc}]=option:get(Options,[{posSrc,required}]),
 	[{resHolder,Holder}]=option:get(Options,[{resHolder,required}]),
-	[{color,Side}]=option:get(Options,[{color,required}]),
+	[{name,Player}]=option:get(Options,[{name,required}]),
 	io:write(caster40),
 	{board,Board}=keyValueStore:get(Holder,board),
 	io:write(caster45),
 	{Rest,Hand}=draw(Deck,{[],0},StartHand),
-	{UI,_}=matrixUI:start({10,2}),
-	Wallet=cost:newWallet(TickTime),
+	UI=playerUI:request(Player),
+	%{UI,_}=matrixUI:start({10,2}),
+	Wallet=cost:newWallet(Player,TickTime),
 	io:write(caster50),
-	Pid=spawn_link(fun()->loop(Rest,Hand,{Side,Board,PosSrc},Wallet,UI)end),
+	Pid=spawn_link(fun()->loop(Rest,Hand,{Player,Board,PosSrc},Wallet,UI)end),
 	io:write(caster100),
 	{ok,Pid}.
 
-loop(Deck,{_,Count}=Hand,{Side,Board,Mover}=A,Payer,UI)->
+loop(Deck,{_,Count}=Hand,{Player,Board,Mover}=A,Payer,UI)->
 		pushHand(Hand,UI),
 		receive 
 		draw -> {{_,Count}=NewHand,NewDeck}=draw(Deck,Hand,1),
@@ -37,7 +38,7 @@ loop(Deck,{_,Count}=Hand,{Side,Board,Mover}=A,Payer,UI)->
 		{cast,N} when N>Count ->loop(Deck,Hand,A,Payer,UI);
 		{cast,N}->Card=cardNr(Hand,N),
 				  SrcPos=playerMover:askForPos(Mover),
-				  case card:cast(Card, Board, SrcPos, Payer, Side) of 
+				  case card:cast(Card, Board, SrcPos, Player) of 
 					  ok->NewHand=removeCard(Hand,N),loop(Deck,NewHand,A,Payer,UI);
 					  failed->loop(Deck,Hand,A,Payer,UI)
 				  end;
@@ -47,7 +48,8 @@ loop(Deck,{_,Count}=Hand,{Side,Board,Mover}=A,Payer,UI)->
 pushHand({_,0},_)->
 	ok;
 pushHand({_,Count}=Hand,UI)->
-	matrixUI:setSquare({1,2},{Count-1,{0,128,0}} ,UI),
+	playerUI:show(UI,Count,{a,{0,128,0}}),
+	%matrixUI:setSquare({1,2},{Count-1,{0,128,0}} ,UI),
 	pushHand(Hand,UI,1);
 pushHand(11,_)->
 	ok;
@@ -64,10 +66,10 @@ pushHand(Hand,UI,N) when N>0->
 
 
 pushCard(nil,N,UI) when erlang:is_integer(N)->
-	matrixUI:setSquare({N,1},{nothing,{0,0,0}} , UI);
+	playerUI:show(UI,N,{nothing,{0,0,0}} );
 pushCard(Card,N,UI) when erlang:is_integer(N)->
 	Text=card:getText(Card),
-	matrixUI:setSquare({N,1},{Text,{0,128,0}} , UI).
+	playerUI:show(UI,N,{Text,{0,128,0}}).
 
 draw(Deck,Hand,-1)->
 	{Deck,Hand};

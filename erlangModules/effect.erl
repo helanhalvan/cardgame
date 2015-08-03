@@ -7,7 +7,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([new/0,apply/4]).
+-export([new/0]).
 %creates a new random effect
 %returns {Effect,MetaData}
 new()->
@@ -15,14 +15,30 @@ new()->
 	CostHolder=0,
 	A=new(dice:getRand(6)+dice:getRand(6),[],[],GemHolder,CostHolder),
 	fixMeta(A).
+
+%% ====================================================================
+%% Internal functions
+%% ====================================================================
+%applies an effect 
+%to a Board
+%from a Pos
+%for a Player
+apply(Board,[H|T],SrcPos,Player)->
+	H(Board,SrcPos,Player),
+	apply(Board,T,SrcPos,Player);
+apply(_Board,[],_SrcPos,_Player)->
+	ok;
+apply(_Board,S,_SrcPos,_Player)-> %how does this pid get here???
+	io:write({strange_thing_in_apply,S}).
+
 new(0,List,Meta,GemHolder,Cost)->
-	A=fun(Board,SrcPos,Side) -> apply(List,Board,SrcPos,Side) end,
+	A=fun(Board,SrcPos,Player) -> apply(Board,List,SrcPos,Player) end,
 	{A,{Meta,GemHolder,Cost}};
 new(N,List,Meta,GemHolder,CurrentCost)->
-	case dice:getRand(3) of
+	case dice:getRand(2) of
 		1-> {A,B,NewGems,NewCost}=newSpawn(GemHolder,CurrentCost);
-		2-> {A,B,NewGems,NewCost}=newMove(GemHolder,CurrentCost);
-		3-> {A,B,NewGems,NewCost}=newCrystal(GemHolder,CurrentCost)
+		%2-> {A,B,NewGems,NewCost}=newMove(GemHolder,CurrentCost);
+		2-> {A,B,NewGems,NewCost}=newCrystal(GemHolder,CurrentCost)
 	end,
 	new(N-1,[A|List],[B|Meta],NewGems,NewCost).
 
@@ -85,19 +101,6 @@ delta({A,B})->
 	A3=lXML:insert(A2, A),
 	C2=lXML:insert(C, B3),
 	lXML:insert(C2, A3).
-%applies an effect 
-%to a Board
-%from a Pos
-%for a side
-apply(Board,[H|T],SrcPos,Side)->
-	H(Board,SrcPos,Side),
-	apply(Board,T,SrcPos,Side);
-apply(_Board,[],_SrcPos,_Side)->
-	ok.
-
-%% ====================================================================
-%% Internal functions
-%% ====================================================================
 	%adds green, might add red, $1-100 
 newSpawn(Gems,N)->
 	{Scatter,Meta}=pos:scatterFunk(),
@@ -110,16 +113,19 @@ newSpawn(Gems,N)->
 	end),
 	%cost =+ Size
 	NewCost=N+Size,
-	Fun=fun(Board,SrcPos,Side)->
+	Fun=fun(Board,SrcPos,Player)->
+			
 			Pos=Scatter(SrcPos),
-			permanent:create(Pos, Board, Size, Side),
+			io:nl(),
+			io:write({spawning,to,Pos}),
+			permanent:create(Pos, Board, Size, Player),
 			ok
 	end,
 	{Fun,{spawn,Size,Meta},NewGems,NewCost}.
 	%adds _ and $0
-newMove(Gems,N)->
+newMove(Gems,N)-> %TODO FIX this funk
 	{SFunc,Meta}=pos:scatterFunk(),
-	FFun=fun(Board,_Pos,Side)->
+	FFun=fun(Board,_Pos,Player)->
 			Func=fun(Src)->
 					Target=SFunc(Src),
 					case board:move(Board, Src, Target) of 
@@ -128,7 +134,8 @@ newMove(Gems,N)->
 				 	end,
 				 Src
 				 end,
-			side:applyToAll(Func, Side),
+			%TODO apply to entire board, only move if color is right
+			%board:applyToAll(Func),
 			ok
 	end,
 	{FFun,{move,Meta},Gems,N+1}.
@@ -140,11 +147,5 @@ newCrystal(Gems,N)->
 			2 -> green;
 			3 -> white
 		   end),
-	FFun=fun(_Board,_Pos,Side)->
-	Player=side:getPlayers(Side), %use playerRef for finding the right wallet
-	cost:addCrystal(CType,Player) %needs to be implemented
-	end,
+	FFun=fun(_Board,_Pos,Player)->cost:addCrystal(CType,Player),io:nl(),io:write({new,CType,for,Player}) end,
 	{FFun,{crystal,CType},G,N+25}.
-
-
-

@@ -28,8 +28,8 @@ remove(Holder,Atom) when is_atom(Atom)->
 %counts the occurances of an atom
 count(Holder,Atom) when is_atom(Atom)->
 	case lists:keysearch(Atom, 1, Holder) of
-		{value,{Atom,N}}-> {ok,N};
-		false-> {ok,0}
+		{value,{Atom,N}}-> N;
+		false-> 0
 	end.
 %counts the number of atoms in the holder
 count(Holder)->

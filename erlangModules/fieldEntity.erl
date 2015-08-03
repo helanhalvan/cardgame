@@ -30,8 +30,8 @@ loop({X,Y}=Pos,Field,Listner)->
 		right->sendReport(Listner,Field,Pos,{X,Y+1});
 		up->sendReport(Listner,Field,Pos,{X-1,Y});
 		down->sendReport(Listner,Field,Pos,{X+1,Y});
-		{wantPos,Caller}->utils:sendMsg(Caller, Pos);
-		{fight,Pos2}->permanent:fight(Field,Pos,Pos2)
+		{wantPos,Caller}->utils:sendMsg(Caller, Pos),Pos;
+		{fight,Pos2}->permanent:fight(Field,Pos,Pos2),Pos
 	end),
 	loop(NewPos,Field,Listner).
 

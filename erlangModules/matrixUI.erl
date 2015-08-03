@@ -41,7 +41,7 @@ loop(Grid)->
 			wxGrid:setCellValue(Grid, X-1,Y-1,  Text),
 			wxGrid:setCellBackgroundColour(Grid,X-1,Y-1,Color),
 			ok;
-		Strange->io:write({matrixUI_got_weirdness,Strange})
+		Strange->io:nl(),io:write({matrixUI_got_weirdness,Strange})
 	end,
 	loop(Grid).
 

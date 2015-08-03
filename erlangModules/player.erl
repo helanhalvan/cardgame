@@ -14,7 +14,13 @@ start(Options)->
 	%simply pass all options to both sub prossess
 	{ok,Pid}=supervisor:start_link(?MODULE, na),
 	io:write({playerStarting}),
-
+	
+	playerData:register(Options),
+	
+	PUI={pUI,{playerUI,start,[Options]},permanent,brutal_kill,worker,dynamic},
+	supervisor:start_child(Pid,PUI),
+	io:write({player15}),
+	
 	Mover={mover,{playerMover,start,[Options]},permanent,brutal_kill,worker,dynamic},
 	{ok,MPid}=supervisor:start_child(Pid,Mover),
 	io:write({player20}),
@@ -22,7 +28,7 @@ start(Options)->
 	Caster={caster,{playerCaster,start,[Op2]},permanent,brutal_kill,worker,dynamic},
 	{ok,CPid}=supervisor:start_child(Pid,Caster),
 	io:write({player25}),
-
+	
 	[{resHolder,Holder}]=option:get(Options,[{resHolder,required}]), 
 	[{controls,KeyBinds}]=option:get(Options,[{controls,required}]),
 	io:write({player30}),
@@ -30,7 +36,7 @@ start(Options)->
 	io:write({player50}),
 	Callback1=utils:makeKeyCallback(CPid,KeyBinds),
 	Callback2=utils:makeKeyCallback(MPid,KeyBinds),
-	%Callback2=fun(A)->MPid ! down end,
+
 	io:write({player75}),
 	keyListner:register(Callback1, KeyListner),
 	keyListner:register(Callback2, KeyListner),

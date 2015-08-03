@@ -7,19 +7,12 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([create/4,create/5,fight/3]).
-
-create(Pos,Board,Size,Side) when is_pid(Board) ->
-	case board:spawn(Board, Pos, {Side,Size}) of 
-		ok -> side:register(Pos,Side),ok;
-		_ -> failed
-	end.
-create(Pos,Board,Size,Side,[player,Ref])->	
-	RealSide={Side,Ref},
-	case board:spawn(Board, Pos, {RealSide,Size}) of
-		ok -> side:register(Ref, Side);
-		_ -> failed
-	end.
+-export([create/4,fight/3]).
+%TODO replace "side" module refs with a new module
+create(Pos,Board,Size,Player) when is_pid(Board) ->
+	Data=playerData:get(Player),
+	[{color,Color}]=option:get(Data,[{color,required}]),
+	field:spawn(Board, Pos, {Color,Size}).
 
 %2 permanents on a given board fight
 fight(Board,A,B)->
@@ -58,7 +51,6 @@ fight({_,P1},{_,P1})->
 	{nil,nil};
 %else
 fight({S1,P1},{_S2,P2}) when P1>P2->
-	io:write({S1,_S2}),
 	{{S1,P1-P2},nil};
 fight({_,P1},{S2,P2}) when P1<P2->
 	{nil,{S2,P2-P1}}.

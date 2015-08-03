@@ -7,27 +7,29 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([new/1,newWallet/1,pay/2,toXML/1,addCrystal/2]).
+-export([new/1,newWallet/2,pay/2,toXML/1,addCrystal/2]).
 
 new({_,Gems,Cost}) when erlang:is_integer(Cost)->
 	case atomHolder:count(Gems) of 
 		0 -> [{undef,Cost}];
 		N when is_integer(N)-> N2=trunc(Cost/N),makeCost(N2,Gems,[])
 	end.
-makeCost(N,Gems,List)->
-	case atomHolder:get(Gems) of
-		{Atom,Rest}->makeCost(N,Rest,[{Atom,N}|List]);
-		_->List
-	end.
 %the time between things happening
 %in the game 
-newWallet(TickTime)->
-	spawn_link(fun()->constructor(TickTime) end).
-addCrystal(Type,Player)->
-	W=getWallet(Player),
-	W ! {crystal, Type}.
+newWallet(Player,TickTime)->
+	Pid=spawn_link(fun()->constructor(Player,TickTime) end),
+	playerData:add(Player,{wallet,Pid}),
+	Pid.
 
-pay(Cost,Wallet)->
+addCrystal(Type,Wallet) when erlang:is_pid(Wallet)->
+	Wallet ! {crystal, Type};
+addCrystal(Type,Player) when erlang:is_reference(Player)->
+	W=getWallet(Player),
+	addCrystal(Type, W).
+pay(Cost,Player) when erlang:is_reference(Player)->
+	W=getWallet(Player),
+	pay(Cost,W);
+pay(Cost,Wallet) when erlang:is_pid(Wallet)->
 	Caller=utils:makeCaller(),
 	Wallet ! {pay,Cost,Caller},
 	utils:waitForAck(Caller).
@@ -42,27 +44,24 @@ toXML(Cost)->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-getWallet(Player)->
-	M=getWalletManager(),
-	C=utils:makeCaller(),
-	M ! {get,Player,C},
-	utils:waitForAck(C).
-getWalletManager()->
-	utils:getPid(walletManager, fun()->manager([]) end).
-manager(List)->
-	receive
-		{add,Player,Wallet}->manager([{Player,Wallet}|List]);
-		{get,Player,Caller}->W=lists:keysearch(Player, 1, List),utils:sendMsg(Caller, W),manager(List)
+makeCost(N,Gems,List)->
+	case atomHolder:get(Gems) of
+		{Atom,Rest}->makeCost(N,Rest,[{Atom,N}|List]);
+		_->List
 	end.
-%TODO expand UI to Show crystals
-constructor(TickTime)-> 
+getWallet(Player)->
+	Data=playerData:get(Player),
+	[{wallet,Pid}]=option:get(Data,[{wallet,required}]),
+	Pid.
+
+constructor(Player,TickTime)-> 
 	utils:pacemaker(cash, TickTime),
-	{UI,_}=matrixUI:start({1,1}),
+	UI=playerUI:request(Player),
 	A=atomHolder:create(),
 	loop(0,A,UI).
 
 loop(N,AtHolder,UI)->
-	show(N,UI),
+	show(N,AtHolder,UI),
 	receive
 		cash->loop(N+1,AtHolder,UI);
 		{crystal,Atom}->A=atomHolder:add(AtHolder, Atom),loop(N,A,UI);
@@ -78,5 +77,9 @@ pay([{Type,Value}|T],AtHolder,CurrentBalance)->
 		{ok, NewHolder}->pay(T,NewHolder,CurrentBalance);
 		_->pay(T,AtHolder,CurrentBalance-Value)
 	end.
-show(N,UI)->
-	matrixUI:setSquare({1,1}, {N,{100,100,0}}, UI).
+show(N,AtHolder,UI)->
+	playerUI:show(UI,1,{N,{100,100,0}}),
+	playerUI:show(UI,2,{atomHolder:count(AtHolder,red),{200,0,0}}),
+	playerUI:show(UI,3,{atomHolder:count(AtHolder,green),{0,200,0}}),
+	playerUI:show(UI,4,{atomHolder:count(AtHolder,blue),{0,0,200}}),
+	playerUI:show(UI,5,{atomHolder:count(AtHolder,white),{200,200,200}}).
