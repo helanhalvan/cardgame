@@ -12,7 +12,7 @@
 create(Pos,Board,Size,Player) when is_pid(Board) ->
 	Data=playerData:get(Player),
 	[{color,Color}]=option:get(Data,[{color,required}]),
-	field:spawn(Board, Pos, {Color,Size}).
+	field:spawn(Board, Pos, {Size,Color}).
 
 %2 permanents on a given board fight
 fight(Board,A,B)->
@@ -26,7 +26,7 @@ fight(Board,A,B)->
 		  			  D->{D,nothing}
 				  end
 		  end,
-	board:scanAndUpdate(Board, PosList, Funk1, Acc, Funk2).
+	field:scanAndUpdate(Board, PosList, Funk1, Acc, Funk2).
 
 %=internal functions
 
@@ -38,22 +38,19 @@ feed2_return_list(A,B)->
 
 %fight cases
 %same team
-fight({A,_}=B,{A,_}=C)->
-	{B,C};
-fight({A,_}=B,{{A,_},_}=C)->
-	{B,C};
-fight({{A,_},_}=B,{{A,_},_}=C)->
-	{B,C};
-fight({{A,_},_}=B,{A,_}=C)->
+fight({_,A}=B,{_,A}=C)->
 	{B,C};
 %same size
-fight({_,P1},{_,P1})->
+fight({P1,_},{P1,_})->
 	{nil,nil};
 %else
-fight({S1,P1},{_S2,P2}) when P1>P2->
-	{{S1,P1-P2},nil};
-fight({_,P1},{S2,P2}) when P1<P2->
-	{nil,{S2,P2-P1}}.
+fight({P1,S1},{P2,_S2}) when P1>P2->
+	{{P1-P2,S1},nil};
+fight({P1,_},{P2,S2}) when P1<P2->
+	{nil,{P2-P1,S2}};
+fight(A,B)->
+	io:write({A,B,no_clause_matching}),
+	{nil,nil}.
 
 
 

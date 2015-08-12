@@ -7,10 +7,10 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([spawn/5,move/2,getPos/1]).
+-export([spawn/5,move/2,getPos/1,fight/2]).
 
 spawn(Field,Pos,Size,Color,Listner)->
-	field:spawn(Field,Pos,{Color,Size}),
+	field:spawn(Field,Pos,{Size,Color}),
 	spawn_link(fun()->loop(Pos,Field,Listner)end).
 %Dir are: up | down | left | right
 move(Entity,Dir)->
@@ -19,6 +19,8 @@ getPos(Entity)->
 	Caller=utils:makeCaller(),
 	Entity ! {wantPos,Caller},
 	utils:waitForAck(Caller).
+fight(Entity,Pos)->
+	Entity ! {fight,Pos}.
 %% ====================================================================
 %% Internal functions
 %% ====================================================================

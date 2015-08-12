@@ -104,14 +104,45 @@ loop(Board, Size, UI)->
 			clear(Pos,Board,UI), 
 			ack(Caller);
 		{apply,PosList,C,Funk,Acc0} ->
+			case validate(PosList) of 
+				ok ->
 			Acc1=scanEach(PosList,Funk,Acc0,Board),
 			senderror(C,Acc1);
+				bad ->io:write(bad_posList),ok
+			end;
 		{applyNupdate,PosList,C,Funk,Acc,Funk2} ->
+			case validate(PosList) of 
+				ok ->
 			Acc1=scanEach(PosList,Funk,Acc,Board),
 			applyToEach(PosList,Funk2,Acc1,Board,UI),
-			ack(C)
+			ack(C);
+				bad ->io:write(bad_posList),ok
+			end
 	end,
 	loop(Board,Size, UI).
+
+validate(PosList) when erlang:is_list(PosList)->
+	case lists:foldl(fun(Pos,Acc)->validate(Pos,Acc) end, ok, PosList) of
+		ok -> ok;
+		bad -> io:write(bad_list)
+	end,
+    bad;
+validate(bad)->bad;
+validate(ok)->ok;
+validate({X,Y}) when X>0 ; Y>0 ; erlang:is_integer(X) ; erlang:is_integer(Y) ->ok;
+validate(_)->bad.
+
+validate(ok,ok)->
+	ok;
+validate(bad,_)->
+	bad;
+validate(_,bad)->
+	bad;
+validate(Thing1,Thing2)->
+	A=validate(Thing1),
+	B=validate(Thing2),
+	validate(A,B).
+
 %==utility functions for loop
 scanEach(PosList,Funk,Acc0,Board)->
 	A=fun(Pos,Acc)->
@@ -121,27 +152,42 @@ scanEach(PosList,Funk,Acc0,Board)->
 	lists:foldl(A, Acc0, PosList).
 applyToEach(PosList,Funk,Acc0,Board,UI)->
 	A=fun(Pos,Acc)->
+			%io:nl(),
+			%io:write({params,Pos,Acc}),
+			%io:nl(),
+			%io:write(get),
 			D=get(Pos,Board),
-			{Result,Acc1}=Funk(D,Acc),
+			%io:nl(),
+			%io:write(funk),
+			Res=Funk(D,Acc),
+			%io:nl(),
+			%io:write({res,Res}),
+			{Result,Acc1}=Res,
+			%io:nl(),
+			%io:write(Result),
 			set(Pos,Board,Result,UI),
+			%io:nl(),
+			%io:write(set_done),
 			Acc1 end,
 	lists:foldl(A, Acc0, PosList).
-set({_,_}=A,Board, {Team,Size}=Dude,UI)->
-	Cell=find(A,Board),
-	C=side:team_to_color(Team),
-	matrixUI:setSquare(A,{Size,C},UI),
-	memCell:set(Cell, Dude);
 
 set({_,_}=A,Board, nil,UI)->
 	Cell=find(A,Board),
 	matrixUI:setSquare(A,{0,{0,0,0}},UI),
-	memCell:set(Cell, nil).
+	memCell:set(Cell, nil);
+set({_,_}=A,Board, Dude,UI)->
+	Cell=find(A,Board),
+	matrixUI:setSquare(A,Dude,UI),
+	memCell:set(Cell, Dude).
+
+
 
 get(Pos,Board) ->
 	A=find(Pos,Board),
 	memCell:get(A).
 
 find({X,Y}, Board)->
+	%io:write({X,Y,validate(A)}),
 	Line=element(X, Board),
 	element(Y,Line).
 

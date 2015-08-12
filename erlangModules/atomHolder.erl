@@ -34,16 +34,18 @@ count(Holder,Atom) when is_atom(Atom)->
 %counts the number of atoms in the holder
 count(Holder)->
 	lists:foldl(fun({_,Y},X)-> X+Y end, 0, Holder).
-%gets a atom from the holder
+
+%returns a atom and a holder without that atom {Atom,NewHolder}
 get([])->
 	error;
 get([{Atom,1}|T])->
 	{Atom,T};
 get([{Atom,N}|T])->
 	{Atom,[{Atom,N-1}|T]}.
-
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+
+
 
 

@@ -9,12 +9,12 @@
 %% ====================================================================
 -export([start/1,init/1]).
 
-%TODO this will need restructuring, 
-%what options will each player get,
-%what option will players get
+%starts all players in a game using data from options
 start(Options)->
 	io:write({players_starting}),
 	{ok,Pid}=supervisor:start_link(?MODULE, na),
+	Judge={judge,{judge,start,[]},permanent,brutal_kill,supervisor,dynamic},
+	{ok, JP}=supervisor:start_child(Pid,Judge),
 	[{resoureHolder,Holder},{spawnPos,PosList}]=option:get(Options,[{resoureHolder,required},{spawnPos,{default,
 							[{pos,{2,2}},
 							 {pos,{9,9}},
@@ -26,20 +26,21 @@ start(Options)->
 																		}]},
 																		{[{color,{255,0,0}},{controls,	[{up,$I},{down,$K},{left,$J},{right,$L},{{cast,1},$7},{{cast,2},$8},{{cast,3},$9},{{cast,4},$0}]}]}]
 															  			}}]),
-	startPlayers(Holder,Popts,Pid,PosList),
+	startPlayers(Holder,Popts,Pid,PosList,JP),
 	io:write({players_done}),
 	{ok,Pid}.
 
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-startPlayers(_,[],_,_)->ok;
-startPlayers(_,_,_,[])->io:write({out_of_spawn_pos});
-startPlayers(Holder,[{Opts}|T1],Pid,[Pos|T2])->
+startPlayers(_,[],_,_,Judge)->ok,judge:done(Judge);
+startPlayers(_,_,_,[],_)->io:write({out_of_spawn_pos});
+startPlayers(Holder,[{Opts}|T1],Pid,[Pos|T2],Judge)->
 	Name=erlang:make_ref(),
 	Options=lists:flatten([Opts|[{resHolder,Holder},{name,Name},Pos]]),
 	Player={Name,{player,start,[Options]},permanent,brutal_kill,supervisor,dynamic},
-	supervisor:start_child(Pid,Player),
+	{ok,PPid}=supervisor:start_child(Pid,Player),
+	judge:newPlayer(Judge,PPid),
 	startPlayers(Holder,T1,Pid,T2).
 init(_args)->
 	%currently there is no reason to try to restart after a component fails

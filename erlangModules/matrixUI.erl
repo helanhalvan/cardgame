@@ -21,8 +21,9 @@ start(A)->
 	end.
 setSquare(Pos,{Dude,Color},Pid)->
 	TextDude=io_lib:format("~p", [Dude]),
-	Pid ! {Pos,TextDude,Color}.
-	
+	Pid ! {Pos,TextDude,Color};
+setSquare(_Pos,M,_Pid)->
+	io:write({setSquare,got,M}).
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
